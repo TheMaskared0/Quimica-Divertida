@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Reações Químicas com Encaixes e Animação de Arraste</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #elements-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .element {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      background-color: #007bff;
+      border-radius: 5px;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    #dropzone-container {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .dropzone {
+      width: 80px;
+      height: 80px;
+      border: 2px dashed #007bff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #007bff;
+      font-size: 14px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .dragging {
+      position: absolute;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulador de Reações Químicas com Encaixes e Animação de Arraste</h1>
+  
+  <div id="elements-container">
+    <div class="element" id="H" ontouchstart="touchStart(event, 'H')">H</div>
+    <div class="element" id="O" ontouchstart="touchStart(event, 'O')">O</div>
+    <div class="element" id="C" ontouchstart="touchStart(event, 'C')">C</div>
+    <div class="element" id="Na" ontouchstart="touchStart(event, 'Na')">Na</div>
+    <div class="element" id="Cl" ontouchstart="touchStart(event, 'Cl')">Cl</div>
+  </div>
+  
+  <div id="dropzone-container">
+    <div class="dropzone" id="slot1" ontouchend="touchEnd(event, 'slot1')">Slot 1</div>
+    <div class="dropzone" id="slot2" ontouchend="touchEnd(event, 'slot2')">Slot 2</div>
+  </div>
+  
+  <div id="result"></div>
+
+  <script>
+    // Dicionário com as combinações de elementos e produtos resultantes
+    const reacoes = {
+      "H,O": "H2O",
+      "C,O": "CO2",
+      "Na,Cl": "NaCl",
+      "H,H": "H2",
+      "O,O": "O2",
+    };
+
+    // Variáveis para armazenar os elementos nos slots
+    let slot1Element = null;
+    let slot2Element = null;
+    let touchElement = null; // Armazena o elemento em toque
+    let ghostElement = null; // Elemento fantasma para animação de arraste
+
+    function touchStart(event, elementId) {
+      touchElement = elementId;
+      const element = document.getElementById(elementId);
+      createGhostElement(element, event.touches[0].pageX, event.touches[0].pageY);
+      window.addEventListener("touchmove", touchMove);
+    }
+
+    function touchMove(event) {
+      if (ghostElement) {
+        ghostElement.style.left = `${event.touches[0].pageX - 25}px`;
+        ghostElement.style.top = `${event.touches[0].pageY - 25}px`;
+      }
+    }
+
+    function touchEnd(event, slotId) {
+      if (touchElement) {
+        const droppedElement = document.getElementById(touchElement).innerText;
+        placeInSlot(droppedElement, slotId);
+        touchElement = null;
+      }
+      removeGhostElement();
+      window.removeEventListener("touchmove", touchMove);
+    }
+
+    // Cria um elemento fantasma para seguir o arraste
+    function createGhostElement(element, x, y) {
+      ghostElement = element.cloneNode(true);
+      ghostElement.classList.add("dragging");
+      ghostElement.style.left = `${x - 25}px`;
+      ghostElement.style.top = `${y - 25}px`;
+      document.body.appendChild(ghostElement);
+    }
+
+    // Remove o elemento fantasma
+    function removeGhostElement() {
+      if (ghostElement) {
+        ghostElement.remove();
+        ghostElement = null;
+      }
+    }
+
+    // Função para colocar o elemento no slot e verificar a reação
+    function placeInSlot(element, slotId) {
+      if (slotId === "slot1") {
+        slot1Element = element;
+        document.getElementById("slot1").innerText = element;
+      } else if (slotId === "slot2") {
+        slot2Element = element;
+        document.getElementById("slot2").innerText = element;
+      }
+
+      // Verificar se ambos os slots têm elementos para executar a reação
+      if (slot1Element && slot2Element) {
+        const resultado = verificarReacao(slot1Element, slot2Element);
+        document.getElementById("result").innerText = `Resultado: ${resultado}`;
+        
+        // Resetar os slots para a próxima reação
+        slot1Element = null;
+        slot2Element = null;
+        document.getElementById("slot1").innerText = "Slot 1";
+        document.getElementById("slot2").innerText = "Slot 2";
+      }
+    }
+
+    function verificarReacao(el1, el2) {
+      const combinacao = [el1, el2].sort().join(",");
+      return reacoes[combinacao] || "Nenhuma reação";
+    }
+  </script>
+</body>
+</html>
